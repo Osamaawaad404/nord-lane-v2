@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nord Lane - Scandinavian Essentials</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#faf7f2;--ink:#2b2622;--muted:#8a8178;--line:#e5ded3;--accent:#a97c50;--accent-d:#8a6540;--card:#fff}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Georgia,'Times New Roman',serif;background:var(--bg);color:var(--ink);line-height:1.5}
+a{color:inherit}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:1rem;padding:.55rem .7rem;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink)}
+header{position:sticky;top:0;background:rgba(250,247,242,.96);backdrop-filter:blur(4px);border-bottom:1px solid var(--line);z-index:50}
+.hwrap{max-width:1180px;margin:0 auto;padding:.9rem 1.2rem;display:flex;align-items:center;gap:1.6rem}
+.logo{font-size:1.45rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+nav{display:flex;gap:1.1rem;align-items:center;margin-left:auto;font-size:.95rem}
+nav a,nav button{background:none;border:none;text-decoration:none;color:var(--ink);font-size:.95rem;padding:.2rem 0;border-bottom:2px solid transparent}
+nav a:hover,nav button:hover{border-bottom-color:var(--ink)}
+.badge{background:var(--ink);color:#fff;border-radius:999px;font-size:.72rem;padding:.05rem .45rem;vertical-align:middle}
+.hero{max-width:1180px;margin:2.2rem auto 1rem;padding:0 1.2rem}
+.hero h1{font-size:2.6rem;font-weight:400;letter-spacing:.02em}
+.hero p{color:var(--muted);margin-top:.4rem}
+.wrap{max-width:1180px;margin:0 auto;padding:1.2rem}
+.toolbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:1.2rem}
+.toolbar input[type=search]{flex:1;min-width:180px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.2rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s}
+.card:hover{box-shadow:0 6px 18px rgba(43,38,34,.08)}
+.card .art{height:170px;display:flex;align-items:center;justify-content:center;font-size:4rem;background:linear-gradient(135deg,#f3ede3,#e9e0d0);cursor:pointer}
+.card .body{padding:.9rem 1rem 1.1rem;display:flex;flex-direction:column;gap:.35rem;flex:1}
+.card h3{font-size:1.05rem;font-weight:400;cursor:pointer}
+.card .cat{color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em}
+.price{font-size:1.05rem}
+.price s{color:var(--muted);font-size:.85rem;margin-left:.4rem}
+.tag{display:inline-block;background:#f0e6d8;color:var(--accent-d);font-size:.7rem;padding:.1rem .5rem;border-radius:999px;text-transform:uppercase;letter-spacing:.06em}
+.btn{background:var(--ink);color:#fff;border:none;padding:.6rem 1.1rem;border-radius:4px;font-size:.9rem;letter-spacing:.03em}
+.btn:hover{background:#3d362f}
+.btn.ghost{background:none;border:1px solid var(--ink);color:var(--ink)}
+.btn.ghost:hover{background:var(--ink);color:#fff}
+.btn.small{padding:.35rem .7rem;font-size:.8rem}
+.btn.google{display:flex;align-items:center;gap:.5rem;justify-content:center;background:#fff;color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;gap:.6rem;align-items:center}
+.stars{color:var(--accent)}
+.drawer{position:fixed;top:0;right:-420px;width:400px;max-width:92vw;height:100vh;background:#fff;border-left:1px solid var(--line);z-index:100;transition:right .25s;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.08)}
+.drawer.open{right:0}
+.drawer .dhead{padding:1rem 1.2rem;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.drawer .dbody{flex:1;overflow-y:auto;padding:1rem 1.2rem}
+.drawer .dfoot{padding:1rem 1.2rem;border-top:1px solid var(--line)}
+.citem{display:flex;gap:.8rem;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--line)}
+.citem .ce{font-size:1.6rem}
+.qty{display:flex;gap:.4rem;align-items:center}
+.qty button{width:24px;height:24px;border:1px solid var(--line);background:#fff;border-radius:4px}
+.modal{position:fixed;inset:0;background:rgba(43,38,34,.45);display:none;align-items:center;justify-content:center;z-index:120;padding:1rem}
+.modal.open{display:flex}
+.mbox{background:#fff;border-radius:10px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:1.6rem}
+.mbox h2{font-weight:400;margin-bottom:.6rem}
+.field{margin-bottom:.8rem;display:flex;flex-direction:column;gap:.3rem}
+.field label{font-size:.82rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.muted{color:var(--muted);font-size:.9rem}
+.notice{background:#fdf3e3;border:1px solid #ecd9b8;color:#7a5a26;padding:.6rem .9rem;border-radius:6px;font-size:.88rem;margin-bottom:.8rem}
+.err{background:#fbeaea;border:1px solid #ecc;color:#8c2f2f;padding:.6rem .9rem;border-radius:6px;font-size:.88rem;margin-bottom:.8rem}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:.5rem .6rem;border-bottom:1px solid var(--line)}
+th{font-weight:400;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
+.adminbar{background:var(--ink);color:#fff;padding:.4rem 1.2rem;font-size:.85rem;display:flex;gap:1rem;align-items:center}
+.adminbar button{background:none;border:1px solid #ffffff55;color:#fff;padding:.2rem .7rem;border-radius:4px;font-size:.8rem}
+.pill{display:inline-block;padding:.12rem .55rem;border-radius:999px;font-size:.75rem}
+.pill.pending{background:#fdf3e3;color:#7a5a26}.pill.confirmed{background:#e8f0e4;color:#3d5c33}.pill.shipped{background:#e3ecf5;color:#2f5470}.pill.delivered{background:#e4efe9;color:#2f5c46}.pill.cancelled{background:#fbeaea;color:#8c2f2f}
+.review{border-top:1px solid var(--line);padding:.6rem 0}
+.hidden{display:none!important}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.2rem}
+.stat{background:#fff;border:1px solid var(--line);border-radius:8px;padding:1rem}
+.stat .n{font-size:1.6rem}
+.stat .l{color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+footer{border-top:1px solid var(--line);margin-top:3rem;padding:1.6rem 1.2rem;text-align:center;color:var(--muted);font-size:.85rem}
+#toast{position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:.7rem 1.3rem;border-radius:6px;opacity:0;transition:opacity .2s;z-index:200;font-size:.9rem}
+@media(max-width:640px){.hero h1{font-size:1.9rem}.drawer{width:100vw}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div class="logo" onclick="go('shop')">Nord Lane</div>
+    <nav>
+      <button onclick="go('shop')">Shop</button>
+      <button id="navWish" class="hidden" onclick="go('wishlist')">Wishlist <span id="wishCount" class="badge hidden"></span></button>
+      <button id="navOrders" class="hidden" onclick="go('orders')">My orders</button>
+      <button id="navAdmin" class="hidden" onclick="go('admin')">Admin</button>
+      <button id="navAuth" onclick="openAuth()">Sign in</button>
+      <button onclick="toggleCart(true)">Cart <span id="cartCount" class="badge hidden"></span></button>
+    </nav>
+  </div>
+  <div id="adminBar" class="adminbar hidden">Signed in as admin <span id="adminMail"></span>
+    <button onclick="adminTab('products')">Products</button>
+    <button onclick="adminTab('orders')">Orders</button>
+    <button onclick="adminTab('stats')">Stats</button>
+  </div>
+</header>
+
+<main id="view"></main>
+
+<footer>Nord Lane - fictional demo store. No real payments. Crafted with Scandinavian restraint.</footer>
+
+<div id="cartDrawer" class="drawer">
+  <div class="dhead"><strong>Your cart</strong><button class="btn ghost small" onclick="toggleCart(false)">Close</button></div>
+  <div class="dbody" id="cartBody"></div>
+  <div class="dfoot">
+    <div class="row" style="justify-content:space-between;margin-bottom:.7rem"><strong>Total</strong><strong id="cartTotal">$0.00</strong></div>
+    <button class="btn" style="width:100%" onclick="checkout()">Checkout</button>
+  </div>
+</div>
+
+<div id="authModal" class="modal"><div class="mbox">
+  <div class="row" style="justify-content:space-between"><h2>Welcome</h2><button class="btn ghost small" onclick="closeModal('authModal')">Close</button></div>
+  <div id="authMsg"></div>
+  <button class="btn google" style="width:100%;margin:.6rem 0" onclick="signInGoogle()">
+    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.6-5.2l-6.3-5.3C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.5l6.3 5.3C41.4 35.4 44 30.2 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+    Sign in with Google</button>
+  <div class="muted" style="text-align:center;margin:.4rem 0">or with email</div>
+  <div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="email"></div>
+  <div class="field"><label>Password</label><input id="authPass" type="password" autocomplete="current-password"></div>
+  <div class="row"><button class="btn" style="flex:1" onclick="signInEmail()">Sign in</button>
+  <button class="btn ghost" style="flex:1" onclick="signUpEmail()">Create account</button></div>
+</div></div>
+
+<div id="prodModal" class="modal"><div class="mbox" id="prodBox"></div></div>
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://dbuxbewucpfilaikznqr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_E8AZymVsZ9jXke1UqbICsw_r6PFTXdg';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let products = [], session = null, profile = null, cart = JSON.parse(localStorage.getItem('nl2_cart')||'[]');
+const fmt = n => '$' + Number(n).toFixed(2);
+const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.opacity=1;setTimeout(()=>t.style.opacity=0,2200)}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+async function init(){
+  const {data:{session:s}} = await sb.auth.getSession();
+  session = s;
+  sb.auth.onAuthStateChange(async (_e,s)=>{session=s;await loadProfile();paintNav();});
+  await loadProfile(); paintNav();
+  await loadProducts();
+  go('shop');
+  paintCart();
+}
+async function loadProfile(){
+  profile = null;
+  if(session?.user){
+    const {data} = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+    profile = data;
+  }
+}
+function paintNav(){
+  const signed = !!session, admin = profile?.role==='admin';
+  document.getElementById('navAuth').textContent = signed ? 'Sign out' : 'Sign in';
+  document.getElementById('navAuth').onclick = signed ? signOut : openAuth;
+  document.getElementById('navWish').classList.toggle('hidden', !signed);
+  document.getElementById('navOrders').classList.toggle('hidden', !signed);
+  document.getElementById('navAdmin').classList.toggle('hidden', !admin);
+  document.getElementById('adminBar').classList.toggle('hidden', !admin || currentView!=='admin');
+  document.getElementById('adminMail').textContent = admin ? ' ('+session.user.email+')' : '';
+  paintWish();
+}
+async function loadProducts(){
+  const {data, error} = await sb.from('products').select('*').eq('active', true).order('id');
+  if(error){toast('Could not load products');return}
+  products = data||[];
+}
+function paintWish(){
+  const n = wishlistCache.size;
+  const el = document.getElementById('wishCount');
+  el.classList.toggle('hidden', !n); el.textContent = n;
+}
+let wishlistCache = new Set();
+async function loadWishlist(){
+  wishlistCache = new Set();
+  if(!session) return;
+  const {data} = await sb.from('wishlist').select('product_id');
+  (data||[]).forEach(r=>wishlistCache.add(r.product_id));
+  paintWish();
+}
+/* ---------- views ---------- */
+let currentView='shop', adminSection='products';
+function go(v){
+  currentView=v;
+  document.getElementById('adminBar').classList.toggle('hidden', !(profile?.role==='admin'&&v==='admin'));
+  const el=document.getElementById('view');
+  if(v==='shop') el.innerHTML=shopHTML();
+  else if(v==='wishlist') el.innerHTML=wishHTML();
+  else if(v==='orders') { el.innerHTML='<div class="wrap"><p class="muted">Loading…</p></div>'; renderOrders(); }
+  else if(v==='admin') el.innerHTML=adminHTML();
+  window.scrollTo(0,0);
+}
+let filters={q:'',cat:'',sort:'new'};
+function shopHTML(){
+  const cats=[...new Set(products.map(p=>p.category))];
+  let list=products.filter(p=>
+    (!filters.cat||p.category===filters.cat) &&
+    (!filters.q||(p.name+' '+p.category+' '+(p.description||'')).toLowerCase().includes(filters.q.toLowerCase())));
+  if(filters.sort==='lo') list=[...list].sort((a,b)=>a.price-b.price);
+  if(filters.sort==='hi') list=[...list].sort((a,b)=>b.price-a.price);
+  if(filters.sort==='name') list=[...list].sort((a,b)=>a.name.localeCompare(b.name));
+  return `<div class="hero"><h1>Quiet essentials, made to last</h1><p>Fictional demo collection - nothing here is really for sale.</p></div>
+  <div class="wrap">
+    <div class="toolbar">
+      <input type="search" placeholder="Search pieces…" value="${esc(filters.q)}" oninput="filters.q=this.value;refresh()">
+      <select onchange="filters.cat=this.value;refresh()">
+        <option value="">All categories</option>
+        ${cats.map(c=>`<option ${filters.cat===c?'selected':''}>${esc(c)}</option>`).join('')}
+      </select>
+      <select onchange="filters.sort=this.value;refresh()">
+        <option value="new">Newest</option><option value="lo" ${filters.sort==='lo'?'selected':''}>Price: low to high</option>
+        <option value="hi" ${filters.sort==='hi'?'selected':''}>Price: high to low</option><option value="name" ${filters.sort==='name'?'selected':''}>Name</option>
+      </select>
+    </div>
+    <div class="grid" id="grid">${list.map(cardHTML).join('')||'<p class="muted">No pieces match.</p>'}</div>
+  </div>`;
+}
+function refresh(){ if(currentView==='shop'){document.getElementById('grid').innerHTML=products.filter(p=>
+  (!filters.cat||p.category===filters.cat)&&(!filters.q||(p.name+' '+p.category+' '+(p.description||'')).toLowerCase().includes(filters.q.toLowerCase()))).map(cardHTML).join(''); go('shop'); document.querySelector('input[type=search]').focus();} }
+function cardHTML(p){
+  return `<div class="card">
+    <div class="art" onclick="openProduct(${p.id})">${esc(p.emoji||'🧵')}</div>
+    <div class="body">
+      ${p.tag?`<span class="tag">${esc(p.tag)}</span>`:''}
+      <h3 onclick="openProduct(${p.id})">${esc(p.name)}</h3>
+      <span class="cat">${esc(p.category)}${p.color?' · '+esc(p.color):''}</span>
+      <span class="price">${fmt(p.price)}${p.original_price?`<s>${fmt(p.original_price)}</s>`:''}</span>
+      <div class="row" style="margin-top:auto;padding-top:.5rem">
+        <button class="btn small" style="flex:1" onclick="addToCart(${p.id})">Add to cart</button>
+        <button class="btn ghost small" title="Wishlist" onclick="toggleWish(${p.id})">${wishlistCache.has(p.id)?'♥':'♡'}</button>
+      </div>
+    </div></div>`;
+}
+/* ---------- product detail + reviews ---------- */
+async function openProduct(id){
+  const p=products.find(x=>x.id===id); if(!p) return;
+  const box=document.getElementById('prodBox');
+  box.innerHTML=`<div class="row" style="justify-content:space-between"><h2>${esc(p.name)}</h2><button class="btn ghost small" onclick="closeModal('prodModal')">Close</button></div>
+  <div style="font-size:3.4rem;text-align:center;padding:1.2rem;background:linear-gradient(135deg,#f3ede3,#e9e0d0);border-radius:8px;margin:.6rem 0">${esc(p.emoji||'🧵')}</div>
+  <p class="muted">${esc(p.category)}${p.color?' · '+esc(p.color):''}</p>
+  <p style="margin:.5rem 0">${esc(p.description||'')}</p>
+  <p class="price" style="font-size:1.3rem">${fmt(p.price)} ${p.original_price?`<s>${fmt(p.original_price)}</s>`:''}</p>
+  <div class="row" style="margin:.8rem 0"><button class="btn" style="flex:1" onclick="addToCart(${p.id});closeModal('prodModal')">Add to cart</button>
+  <button class="btn ghost" onclick="toggleWish(${p.id});openProduct(${p.id})">${wishlistCache.has(p.id)?'♥ In wishlist':'♡ Wishlist'}</button></div>
+  <h3 style="font-weight:400;margin:.8rem 0 .3rem">Reviews</h3><div id="revList"><p class="muted">Loading…</p></div>
+  <div id="revForm"></div>`;
+  document.getElementById('prodModal').classList.add('open');
+  const {data:revs}=await sb.from('reviews').select('*').eq('product_id',id).order('created_at',{ascending:false});
+  document.getElementById('revList').innerHTML=(revs&&revs.length)?revs.map(r=>
+    `<div class="review"><span class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+     <span class="muted"> · ${new Date(r.created_at).toLocaleDateString()}</span><p>${esc(r.body||'')}</p></div>`).join('')
+    :'<p class="muted">No reviews yet.</p>';
+  document.getElementById('revForm').innerHTML = session ? `
+    <div class="field" style="margin-top:.8rem"><label>Your rating</label>
+      <select id="revRating">${[5,4,3,2,1].map(n=>`<option value="${n}">${'★'.repeat(n)}</option>`).join('')}</select></div>
+    <div class="field"><label>Your review</label><textarea id="revBody" rows="2"></textarea></div>
+    <button class="btn small" onclick="addReview(${id})">Post review</button>`
+    : '<p class="muted">Sign in to write a review.</p>';
+}
+async function addReview(pid){
+  const rating=+document.getElementById('revRating').value, body=document.getElementById('revBody').value.trim();
+  const {error}=await sb.from('reviews').insert({product_id:pid,user_id:session.user.id,rating,body});
+  if(error){toast('Could not post review');return}
+  toast('Review posted'); openProduct(pid);
+}
+/* ---------- wishlist ---------- */
+async function toggleWish(pid){
+  if(!session){openAuth();return}
+  if(wishlistCache.has(pid)){ await sb.from('wishlist').delete().eq('product_id',pid); wishlistCache.delete(pid); }
+  else { const {error}=await sb.from('wishlist').insert({product_id:pid}); if(!error) wishlistCache.add(pid); }
+  paintWish(); if(currentView==='wishlist') go('wishlist'); else if(currentView==='shop') go('shop');
+}
+function wishHTML(){
+  const list=products.filter(p=>wishlistCache.has(p.id));
+  return `<div class="wrap"><h1 style="font-weight:400;margin-bottom:1rem">Wishlist</h1>
+  <div class="grid">${list.map(cardHTML).join('')||'<p class="muted">Nothing saved yet.</p>'}</div></div>`;
+}
+/* ---------- cart + checkout ---------- */
+function paintCart(){
+  const body=document.getElementById('cartBody'); let total=0, count=0;
+  body.innerHTML=cart.length?cart.map(ci=>{
+    const p=products.find(x=>x.id===ci.id); if(!p) return '';
+    total+=p.price*ci.qty; count+=ci.qty;
+    return `<div class="citem"><span class="ce">${esc(p.emoji||'🧵')}</span>
+      <div style="flex:1"><div>${esc(p.name)}</div><div class="muted">${fmt(p.price)}</div></div>
+      <div class="qty"><button onclick="chQty(${p.id},-1)">−</button><span>${ci.qty}</span><button onclick="chQty(${p.id},1)">+</button></div></div>`;
+  }).join(''):'<p class="muted">Your cart is empty.</p>';
+  document.getElementById('cartTotal').textContent=fmt(total);
+  const cc=document.getElementById('cartCount');
+  cc.classList.toggle('hidden',!count); cc.textContent=count;
+  localStorage.setItem('nl2_cart',JSON.stringify(cart));
+}
+function addToCart(id){const it=cart.find(c=>c.id===id); if(it) it.qty++; else cart.push({id,qty:1}); paintCart(); toast('Added to cart')}
+function chQty(id,d){const it=cart.find(c=>c.id===id); if(!it)return; it.qty+=d; if(it.qty<1) cart=cart.filter(c=>c.id!==id); paintCart()}
+function toggleCart(open){document.getElementById('cartDrawer').classList.toggle('open',open)}
+async function checkout(){
+  if(!cart.length){toast('Cart is empty');return}
+  if(!session){openAuth();toast('Sign in to check out');return}
+  const items=cart.map(c=>({product_id:c.id,qty:c.qty}));
+  const {data,error}=await sb.rpc('place_order',{items});
+  if(error){toast('Order failed: '+error.message);return}
+  cart=[]; paintCart(); toggleCart(false);
+  go('orders'); toast('Order #'+data+' placed (demo - no payment)');
+}
+/* ---------- orders ---------- */
+async function renderOrders(){
+  const {data:orders}=await sb.from('orders').select('*, order_items(*, products(name,emoji))').order('created_at',{ascending:false});
+  const el=document.getElementById('view');
+  el.innerHTML=`<div class="wrap"><h1 style="font-weight:400;margin-bottom:1rem">My orders</h1>${
+    (orders&&orders.length)?orders.map(o=>`<div class="stat" style="margin-bottom:.8rem">
+      <div class="row" style="justify-content:space-between"><strong>Order #${o.id}</strong><span class="pill ${o.status}">${o.status}</span></div>
+      <div class="muted">${new Date(o.created_at).toLocaleString()} · ${fmt(o.total)}</div>
+      <table style="margin-top:.5rem">${(o.order_items||[]).map(i=>`<tr><td>${esc(i.products?.emoji||'')} ${esc(i.products?.name||'Item')}</td><td>×${i.qty}</td><td>${fmt(i.price*i.qty)}</td></tr>`).join('')}</table>
+    </div>`).join(''):'<p class="muted">No orders yet.</p>'}</div>`;
+}
+/* ---------- auth ---------- */
+function openAuth(){document.getElementById('authModal').classList.add('open')}
+async function signInGoogle(){
+  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});
+  if(error) document.getElementById('authMsg').innerHTML=`<div class="err">${esc(error.message)}</div>`;
+}
+async function signInEmail(){
+  const email=document.getElementById('authEmail').value.trim(), password=document.getElementById('authPass').value;
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  const msg=document.getElementById('authMsg');
+  if(error){msg.innerHTML=`<div class="err">${esc(error.message)}</div>`;return}
+  closeModal('authModal'); toast('Signed in');
+}
+async function signUpEmail(){
+  const email=document.getElementById('authEmail').value.trim(), password=document.getElementById('authPass').value;
+  if(password.length<6){document.getElementById('authMsg').innerHTML='<div class="err">Password needs at least 6 characters.</div>';return}
+  const {error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
+  const msg=document.getElementById('authMsg');
+  if(error){msg.innerHTML=`<div class="err">${esc(error.message)}</div>`;return}
+  msg.innerHTML='<div class="notice">Account created. Check your email to confirm, then sign in.</div>';
+}
+async function signOut(){await sb.auth.signOut(); session=null; profile=null; wishlistCache=new Set(); paintNav(); go('shop'); toast('Signed out')}
+/* ---------- admin ---------- */
+function adminTab(s){adminSection=s; go('admin')}
+function adminHTML(){
+  return `<div class="wrap" id="adminBody"><p class="muted">Loading…</p></div>`;
+}
+async function renderAdmin(){
+  const el=document.getElementById('adminBody'); if(!el||currentView!=='admin') return;
+  if(adminSection==='products'){
+    const {data}=await sb.from('products').select('*').order('id');
+    el.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:1rem">
+      <h1 style="font-weight:400">Products</h1><button class="btn small" onclick="editProduct()">+ Add product</button></div>
+      <div id="pForm"></div>
+      <table><tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Tag</th><th>Active</th><th></th></tr>
+      ${(data||[]).map(p=>`<tr><td>${esc(p.emoji||'')}</td><td>${esc(p.name)}</td><td>${esc(p.category)}</td>
+        <td>${fmt(p.price)}</td><td>${esc(p.tag||'')}</td><td>${p.active?'Yes':'No'}</td>
+        <td class="row"><button class="btn ghost small" onclick='editProduct(${JSON.stringify(p.id)})'>Edit</button>
+        <button class="btn ghost small" onclick="delProduct(${p.id})">Delete</button></td></tr>`).join('')}</table>`;
+  } else if(adminSection==='orders'){
+    const {data}=await sb.from('orders').select('*, order_items(*, products(name))').order('created_at',{ascending:false});
+    el.innerHTML=`<h1 style="font-weight:400;margin-bottom:1rem">Orders</h1>
+      <table><tr><th>#</th><th>Customer</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr>
+      ${(data||[]).map(o=>`<tr><td>${o.id}</td><td>${esc(o.customer_email||'')}</td>
+        <td>${new Date(o.created_at).toLocaleDateString()}</td>
+        <td>${(o.order_items||[]).map(i=>esc(i.products?.name||'?')+' ×'+i.qty).join(', ')}</td>
+        <td>${fmt(o.total)}</td>
+        <td><select onchange="setStatus(${o.id},this.value)">
+          ${['pending','confirmed','shipped','delivered','cancelled'].map(s=>`<option ${o.status===s?'selected':''}>${s}</option>`).join('')}
+        </select></td></tr>`).join('')||'<tr><td colspan="6" class="muted">No orders yet.</td></tr>'}</table>`;
+  } else {
+    const [{count:pc},{data:os}]=await Promise.all([
+      sb.from('products').select('*',{count:'exact',head:true}),
+      sb.from('orders').select('total')]);
+    const rev=(os||[]).reduce((a,o)=>a+Number(o.total),0);
+    el.innerHTML=`<h1 style="font-weight:400;margin-bottom:1rem">Stats</h1>
+      <div class="stats">
+      <div class="stat"><div class="n">${pc??0}</div><div class="l">Products</div></div>
+      <div class="stat"><div class="n">${(os||[]).length}</div><div class="l">Orders</div></div>
+      <div class="stat"><div class="n">${fmt(rev)}</div><div class="l">Revenue (demo)</div></div></div>`;
+  }
+}
+async function setStatus(id,status){
+  const {error}=await sb.from('orders').update({status}).eq('id',id);
+  toast(error?'Not allowed or failed':'Order #'+id+' → '+status);
+}
+function editProduct(id){
+  const p=id?products.find(x=>x.id===id)||{}:{};
+  document.getElementById('pForm').innerHTML=`<div class="stat" style="margin-bottom:1rem">
+    <h3 style="font-weight:400;margin-bottom:.6rem">${id?'Edit':'New'} product</h3>
+    <div class="row" style="flex-wrap:wrap">
+      <input id="pfName" placeholder="Name" value="${esc(p.name||'')}">
+      <input id="pfCat" placeholder="Category" value="${esc(p.category||'')}">
+      <input id="pfPrice" type="number" step="0.01" placeholder="Price" value="${p.price??''}" style="width:110px">
+      <input id="pfOrig" type="number" step="0.01" placeholder="Orig. price" value="${p.original_price??''}" style="width:110px">
+      <input id="pfTag" placeholder="Tag" value="${esc(p.tag||'')}" style="width:90px">
+      <input id="pfColor" placeholder="Color" value="${esc(p.color||'')}" style="width:110px">
+      <input id="pfEmoji" placeholder="Emoji" value="${esc(p.emoji||'')}" style="width:80px">
+      <input id="pfDesc" placeholder="Description" value="${esc(p.description||'')}" style="flex:1;min-width:220px">
+      <label class="muted"><input type="checkbox" id="pfActive" ${p.active===false?'':'checked'}> active</label>
+    </div>
+    <div class="row" style="margin-top:.6rem">
+      <button class="btn small" onclick="saveProduct(${id||'null'})">Save</button>
+      <button class="btn ghost small" onclick="renderAdmin()">Cancel</button></div></div>`;
+  window.scrollTo(0,0);
+}
+async function saveProduct(id){
+  const row={name:v('pfName'),category:v('pfCat'),price:+v('pfPrice')||0,original_price:v('pfOrig')?+v('pfOrig'):null,
+    tag:v('pfTag')||null,color:v('pfColor')||null,emoji:v('pfEmoji')||null,description:v('pfDesc')||null,
+    active:document.getElementById('pfActive').checked};
+  if(!row.name||!row.category||!row.price){toast('Name, category and price are required');return}
+  const {error}=id?await sb.from('products').update(row).eq('id',id):await sb.from('products').insert(row);
+  if(error){toast('Save failed: '+error.message);return}
+  toast('Saved'); await loadProducts(); renderAdmin();
+}
+async function delProduct(id){
+  const {error}=await sb.from('products').delete().eq('id',id);
+  if(error){toast('Delete failed: '+error.message);return}
+  toast('Deleted'); await loadProducts(); renderAdmin();
+}
+const v=id=>document.getElementById(id).value.trim();
+/* admin render hook */
+const _go=go; go=function(v){_go(v); if(v==='admin') renderAdmin(); if(v==='wishlist') loadWishlist().then(()=>_go('wishlist'));};
+init().then(loadWishlist).then(paintNav);
+</script>
+</body>
+</html>
