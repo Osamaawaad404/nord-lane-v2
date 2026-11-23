@@ -124,7 +124,7 @@ body,h1,h2,h3,.logo{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}h1
   <div class="dbody" id="cartBody"></div>
   <div class="dfoot">
     <div class="row" style="justify-content:space-between;margin-bottom:.7rem"><strong>Total</strong><strong id="cartTotal">$0.00</strong></div>
-    <button class="btn" style="width:100%" onclick="checkout()">Checkout</button>
+    <button class="btn" style="width:100%" onclick="checkout()">Review demo order</button>
   </div>
 </div>
 
@@ -142,7 +142,13 @@ body,h1,h2,h3,.logo{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}h1
 </div></div>
 
 <div id="prodModal" class="modal"><div class="mbox" id="prodBox"></div></div>
-<div id="toast"></div>
+<div id="orderReview" class="modal" role="dialog" aria-modal="true" aria-labelledby="orderReviewTitle"><div class="mbox">
+<div class="row" style="justify-content:space-between"><h2 id="orderReviewTitle">Review demo order</h2><button class="btn ghost small" onclick="closeModal('orderReview')">Close</button></div>
+<p class="notice" style="margin:1rem 0">This is a demonstration. No payment is taken, nothing will ship, and no confirmation email is sent. Your signed-in account and the items below are saved as a demo order.</p>
+<div id="orderReviewItems"></div><p class="muted" style="margin:1rem 0">Prices are checked again by the server. Shipping and tax are not calculated in this demo.</p>
+<div class="row" style="justify-content:space-between;margin:1rem 0"><strong>Item subtotal</strong><strong id="orderReviewTotal"></strong></div>
+<p id="orderReviewError" role="alert" style="color:#9a3030"></p><button id="confirmDemoOrder" class="btn" style="width:100%" onclick="submitDemoOrder()">Place demo order · no charge</button>
+</div></div><div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 const SUPABASE_URL = 'https://dbuxbewucpfilaikznqr.supabase.co';
@@ -150,7 +156,8 @@ const SUPABASE_KEY = 'sb_publishable_E8AZymVsZ9jXke1UqbICsw_r6PFTXdg';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const ADMIN_PORTAL=document.body.dataset.portal==='admin';
 
-let products = [], session = null, profile = null, cart = JSON.parse(localStorage.getItem('nl2_cart')||'[]');
+let products = [], session = null, profile = null, cart = readSavedCart();
+function readSavedCart(){try{const a=JSON.parse(localStorage.getItem('nl2_cart')||'[]');return Array.isArray(a)?a.filter(x=>Number.isInteger(x?.id)&&Number.isInteger(x?.qty)&&x.qty>0&&x.qty<=99):[]}catch{return []}}
 const fmt = n => '$' + Number(n).toFixed(2);
 const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.opacity=1;setTimeout(()=>t.style.opacity=0,2200)}
@@ -326,19 +333,36 @@ function paintCart(){
   document.getElementById('cartTotal').textContent=fmt(total);
   const cc=document.getElementById('cartCount');
   cc.classList.toggle('hidden',!count); cc.textContent=count;
-  localStorage.setItem('nl2_cart',JSON.stringify(cart));
+  try{localStorage.setItem('nl2_cart',JSON.stringify(cart));}catch{toast('Browser storage is unavailable; cart will not persist.');}
 }
-function addToCart(id){const it=cart.find(c=>c.id===id); if(it) it.qty++; else cart.push({id,qty:1}); paintCart(); toast('Added to cart')}
-function chQty(id,d){const it=cart.find(c=>c.id===id); if(!it)return; it.qty+=d; if(it.qty<1) cart=cart.filter(c=>c.id!==id); paintCart()}
+function addToCart(id){if(placingOrder)return;const it=cart.find(c=>c.id===id);if(it&&it.qty>=99){toast('Maximum demo quantity is 99');return;} if(it) it.qty++; else cart.push({id,qty:1}); paintCart(); toast('Added to cart')}
+function chQty(id,d){if(placingOrder)return;const it=cart.find(c=>c.id===id); if(!it)return; it.qty=Math.min(99,it.qty+d); if(it.qty<1) cart=cart.filter(c=>c.id!==id); paintCart()}
 function toggleCart(open){document.getElementById('cartDrawer').classList.toggle('open',open)}
+let placingOrder=false, reviewCartKey='';
 async function checkout(){
+  if(placingOrder)return;
   if(!cart.length){toast('Cart is empty');return}
-  if(!session){openAuth();toast('Sign in to check out');return}
+  if(!session){openAuth();toast('Sign in to review a demo order');return}
+  const valid=cart.every(c=>products.some(p=>p.id===c.id)&&c.qty>0&&c.qty<=99);
+  if(!valid){toast('Your cart has an unavailable item. Remove it before continuing.');return}
+  reviewCartKey=JSON.stringify(cart);
+  document.getElementById('orderReviewItems').innerHTML=cart.map(c=>{const p=products.find(p=>p.id===c.id);return `<div class="row" style="justify-content:space-between;padding:.65rem 0;border-bottom:1px solid var(--line)"><span>${esc(p.name)} × ${c.qty}</span><strong>${fmt(p.price*c.qty)}</strong></div>`}).join('');
+  document.getElementById('orderReviewTotal').textContent=fmt(cart.reduce((n,c)=>n+products.find(p=>p.id===c.id).price*c.qty,0));
+  document.getElementById('orderReviewError').textContent='';toggleCart(false);
+  document.getElementById('orderReview').classList.add('open');document.getElementById('confirmDemoOrder').focus();
+}
+async function submitDemoOrder(){
+  if(placingOrder)return;
+  if(!session){closeModal('orderReview');openAuth();return}
+  if(reviewCartKey!==JSON.stringify(cart)){closeModal('orderReview');toast('Your cart changed. Review it again.');return}
+  placingOrder=true;const b=document.getElementById('confirmDemoOrder');b.disabled=true;b.textContent='Saving demo order…';
   const items=cart.map(c=>({product_id:c.id,qty:c.qty}));
-  const {data,error}=await sb.rpc('place_order',{items});
-  if(error){toast('Order failed: '+error.message);return}
-  cart=[]; paintCart(); toggleCart(false);
-  go('orders'); toast('Order #'+data+' placed (demo - no payment)');
+  try{
+    const {data,error}=await sb.rpc('place_order',{items});
+    if(error)throw error;
+    cart=[];paintCart();closeModal('orderReview');go('orders');toast('Demo order #'+data+' saved. No payment or shipping.');
+  }catch(error){document.getElementById('orderReviewError').textContent='Order could not be confirmed. Check My orders before trying again to avoid a duplicate.';}
+  finally{placingOrder=false;b.disabled=false;b.textContent='Place demo order · no charge';}
 }
 /* ---------- orders ---------- */
 async function renderOrders(){
