@@ -297,8 +297,8 @@ async function addReview(pid){
 async function toggleWish(pid){
   if(!session){openAuth();return}
   if(wishlistCache.has(pid)){ await sb.from('wishlist').delete().eq('product_id',pid); wishlistCache.delete(pid); }
-  else { const {error}=await sb.from('wishlist').insert({product_id:pid}); if(!error) wishlistCache.add(pid); }
-  paintWish(); if(currentView==='wishlist') go('wishlist'); else if(currentView==='shop') go('shop');
+  else { const {error}=await sb.from('wishlist').insert({product_id:pid,user_id:session.user.id}); if(error){toast('Could not save item');return} wishlistCache.add(pid); }
+  if(currentView==='wishlist') go('wishlist'); else if(currentView==='shop') go('shop');
 }
 function wishHTML(){
   const list=products.filter(p=>wishlistCache.has(p.id));
