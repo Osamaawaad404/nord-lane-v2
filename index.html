@@ -77,6 +77,16 @@ th{font-weight:400;color:var(--muted);font-size:.78rem;text-transform:uppercase;
 footer{border-top:1px solid var(--line);margin-top:3rem;padding:1.6rem 1.2rem;text-align:center;color:var(--muted);font-size:.85rem}
 #toast{position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:.7rem 1.3rem;border-radius:6px;opacity:0;transition:opacity .2s;z-index:200;font-size:.9rem}
 @media(max-width:640px){.hero h1{font-size:1.9rem}.drawer{width:100vw}}
+
+body{font-family:Arial,Helvetica,sans-serif} h1,h2,h3,.logo{font-family:Georgia,serif}
+.hwrap{padding:1.1rem 1.2rem}.logo{font-size:1.3rem;letter-spacing:.18em}nav{font-size:.85rem}
+.hero{max-width:none;margin:0 0 2rem;padding:0;background:#172e30;color:#f7f3e8;display:grid;grid-template-columns:1fr 1fr;min-height:480px}
+.hero-copy{padding:4rem max(2rem,calc((100vw - 1140px)/2));padding-right:3rem;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.hero h1{font-size:clamp(3rem,5vw,5rem);line-height:1.03;letter-spacing:-.05em;margin:1.5rem 0}.hero h1 i{color:#c4d5bc;font-weight:400}.hero p{color:#c0ccca;max-width:350px;font-size:.95rem;line-height:1.8}
+.eyebrow,.plate-label,.plate-foot{font-size:.65rem;letter-spacing:.18em}.hero-btn{margin:1.8rem 0;background:#e6ddc9;color:#152d2c;padding:.85rem 1.1rem}.hero small{font-size:.56rem;letter-spacing:.12em;color:#b3c3bc}
+.hero-plate{position:relative;background:radial-gradient(ellipse at 40% 30%,#e5d9c2,#bcb49f);overflow:hidden;display:flex;align-items:center;justify-content:center}.hero-plate svg{width:65%;height:450px;transform:rotate(-9deg)}.plate-label{position:absolute;top:2rem;left:2rem;color:#33443d}.plate-foot{position:absolute;bottom:1.8rem;right:2rem;color:#33443d}
+.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.5rem}.card{border:0;border-radius:0;background:transparent}.card .art{height:285px;background:#eee9df;overflow:hidden}.art svg{height:94%;width:90%;transition:transform .3s}.card:hover .art svg{transform:scale(1.05)}.card .body{padding:1rem 0 1.5rem;gap:.5rem}.card h3{font-size:1.1rem}.tag{align-self:flex-start;border-radius:0}.card .btn{padding:.65rem;border-radius:0}.toolbar{margin-bottom:1.8rem}.price{font-size:.9rem}.card .cat{font-size:.65rem}.wrap{overflow-x:auto}.adminbar{flex-wrap:wrap}.mbox svg{max-height:210px}.mbox{font-family:Arial,sans-serif}
+@media(max-width:700px){.hero{grid-template-columns:1fr;min-height:0}.hero-copy{padding:2.5rem 1.3rem}.hero h1{font-size:3.3rem}.hero-plate{height:260px}.hero-plate svg{height:280px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}.card .art{height:200px}.hwrap{flex-wrap:wrap;gap:.7rem}nav{width:100%;gap:1rem;overflow-x:auto;margin:0;font-size:.8rem}.logo{font-size:1.1rem}.card h3{font-size:.95rem}.card .row{gap:.3rem}.card .btn{font-size:.7rem;padding:.6rem .3rem}.card .cat{font-size:.55rem}.plate-label{top:1rem;left:1rem}th,td{white-space:nowrap}.toolbar{gap:.5rem}}
 </style>
 </head>
 <body>
@@ -95,7 +105,7 @@ footer{border-top:1px solid var(--line);margin-top:3rem;padding:1.6rem 1.2rem;te
   <div id="adminBar" class="adminbar hidden">Signed in as admin <span id="adminMail"></span>
     <button onclick="adminTab('products')">Products</button>
     <button onclick="adminTab('orders')">Orders</button>
-    <button onclick="adminTab('stats')">Stats</button>
+    <button onclick="adminTab('stats')">Stats</button><button onclick="adminTab('people')">People</button>
   </div>
 </header>
 
@@ -142,7 +152,7 @@ function closeModal(id){document.getElementById(id).classList.remove('open')}
 async function init(){
   const {data:{session:s}} = await sb.auth.getSession();
   session = s;
-  sb.auth.onAuthStateChange(async (_e,s)=>{session=s;await loadProfile();paintNav();});
+  sb.auth.onAuthStateChange((_e,s)=>{session=s;setTimeout(async()=>{await loadProfile();paintNav();},0);});
   await loadProfile(); paintNav();
   await loadProducts();
   go('shop');
@@ -205,7 +215,7 @@ function shopHTML(){
   if(filters.sort==='lo') list=[...list].sort((a,b)=>a.price-b.price);
   if(filters.sort==='hi') list=[...list].sort((a,b)=>b.price-a.price);
   if(filters.sort==='name') list=[...list].sort((a,b)=>a.name.localeCompare(b.name));
-  return `<div class="hero"><h1>Quiet essentials, made to last</h1><p>Fictional demo collection - nothing here is really for sale.</p></div>
+  return `<section class="hero"><div class="hero-copy"><span class="eyebrow">NORD LANE / STUDIO 02</span><h1>Less noise.<br><i>More intention.</i></h1><p>Considered shapes. Quiet colors. An everyday wardrobe, reimagined for a slower pace.</p><button class="btn hero-btn" onclick="document.querySelector('.toolbar').scrollIntoView({behavior:'smooth'})">Explore the collection ↗</button><small>FICTIONAL COLLECTION · NO REAL PAYMENTS</small></div><div class="hero-plate"><span class="plate-label">THE EVERYDAY EDIT / 2026</span>${fashionArt({id:1,name:'Nord coat concept',category:'Outerwear'})}<span class="plate-foot">01 — FORM FOLLOWS FEELING</span></div></section>
   <div class="wrap">
     <div class="toolbar">
       <input type="search" placeholder="Search pieces…" value="${esc(filters.q)}" oninput="filters.q=this.value;refresh()">
@@ -223,9 +233,20 @@ function shopHTML(){
 }
 function refresh(){ if(currentView==='shop'){document.getElementById('grid').innerHTML=products.filter(p=>
   (!filters.cat||p.category===filters.cat)&&(!filters.q||(p.name+' '+p.category+' '+(p.description||'')).toLowerCase().includes(filters.q.toLowerCase()))).map(cardHTML).join(''); go('shop'); document.querySelector('input[type=search]').focus();} }
+function fashionArt(p){
+const colors=['#b99b79','#e8e2d7','#8c9686','#344d68','#63888d','#f0e9de','#646968','#adad9a','#666a70','#bd846e'];
+const c=colors[(Number(p.id)-1)%colors.length]||'#a49b8a';
+const cat=p.category; let shape='';
+if(cat==='Denim'||cat==='Trousers')shape='<path d="M82 48h76l-8 64 9 137-37 4-12-112-12 112-36-4 14-138z"/><path d="M111 51v71M83 70h73" fill="none" stroke="#ffffff55"/>';
+else if(cat==='Dresses')shape='<path d="M98 44h44l8 42-13 39 39 126H64l39-126-12-39z"/><path d="M100 125h39" stroke="#ffffff66"/>';
+else if(cat==='Accessories')shape=p.name.includes('Scarf')?'<path d="M93 46h42l14 190-40 11-6-129-12 125-33-9z"/>':'<path d="M68 150c0-81 104-81 104 0v27H68z"/><path d="M63 164h114v30H63z"/>';
+else shape='<path d="M91 49l-28 13-34 64 29 17 20-34-5 133h94l-5-133 20 34 29-17-34-64-28-13-29 19z"/><path d="M91 49q29 37 58 0M120 70v169" fill="none" stroke="#ffffff66" stroke-width="2"/>';
+return `<svg viewBox="0 0 240 290" role="img" aria-label="${esc(p.name)} original concept illustration"><defs><filter id="shadow${p.id}"><feDropShadow dx="0" dy="10" stdDeviation="7" flood-opacity=".12"/></filter></defs><ellipse cx="120" cy="267" rx="70" ry="9" fill="#000" opacity=".05"/><g fill="${c}" stroke="#00000018" stroke-width="1.5" filter="url(#shadow${p.id})">${shape}</g></svg>`;
+}
+
 function cardHTML(p){
   return `<div class="card">
-    <div class="art" onclick="openProduct(${p.id})">${esc(p.emoji||'🧵')}</div>
+    <div class="art" onclick="openProduct(${p.id})">${fashionArt(p)}</div>
     <div class="body">
       ${p.tag?`<span class="tag">${esc(p.tag)}</span>`:''}
       <h3 onclick="openProduct(${p.id})">${esc(p.name)}</h3>
@@ -242,7 +263,7 @@ async function openProduct(id){
   const p=products.find(x=>x.id===id); if(!p) return;
   const box=document.getElementById('prodBox');
   box.innerHTML=`<div class="row" style="justify-content:space-between"><h2>${esc(p.name)}</h2><button class="btn ghost small" onclick="closeModal('prodModal')">Close</button></div>
-  <div style="font-size:3.4rem;text-align:center;padding:1.2rem;background:linear-gradient(135deg,#f3ede3,#e9e0d0);border-radius:8px;margin:.6rem 0">${esc(p.emoji||'🧵')}</div>
+  <div style="font-size:3.4rem;text-align:center;padding:1.2rem;background:linear-gradient(135deg,#f3ede3,#e9e0d0);border-radius:8px;margin:.6rem 0">${fashionArt(p)}</div>
   <p class="muted">${esc(p.category)}${p.color?' · '+esc(p.color):''}</p>
   <p style="margin:.5rem 0">${esc(p.description||'')}</p>
   <p class="price" style="font-size:1.3rem">${fmt(p.price)} ${p.original_price?`<s>${fmt(p.original_price)}</s>`:''}</p>
@@ -369,6 +390,9 @@ async function renderAdmin(){
         <td><select onchange="setStatus(${o.id},this.value)">
           ${['pending','confirmed','shipped','delivered','cancelled'].map(s=>`<option ${o.status===s?'selected':''}>${s}</option>`).join('')}
         </select></td></tr>`).join('')||'<tr><td colspan="6" class="muted">No orders yet.</td></tr>'}</table>`;
+  } else if(adminSection==='people'){
+    const {data,error}=await sb.from('profiles').select('id,email,role').order('created_at');
+    el.innerHTML=`<h1>People & access</h1><p class="muted">Only registered accounts can be promoted. Roles are checked on the server. You cannot change your own role here.</p><table><tr><th>Account</th><th>Role</th><th>Action</th></tr>${(data||[]).map(p=>`<tr><td>${esc(p.email)}</td><td>${esc(p.role)}</td><td>${p.id===session.user.id?'You':`<button class="btn ghost small" onclick="changeRole('${p.id}','${p.role==='admin'?'customer':'admin'}')">Make ${p.role==='admin'?'customer':'admin'}</button>`}</td></tr>`).join('')}</table>`;
   } else {
     const [{count:pc},{data:os}]=await Promise.all([
       sb.from('products').select('*',{count:'exact',head:true}),
@@ -384,6 +408,11 @@ async function renderAdmin(){
 async function setStatus(id,status){
   const {error}=await sb.from('orders').update({status}).eq('id',id);
   toast(error?'Not allowed or failed':'Order #'+id+' → '+status);
+}
+async function changeRole(id,role){
+  if(!confirm('Change this registered account to '+role+'?'))return;
+  const {error}=await sb.rpc('admin_set_role',{target:id,new_role:role});
+  toast(error?error.message:'Role updated'); if(!error)renderAdmin();
 }
 function editProduct(id){
   const p=id?products.find(x=>x.id===id)||{}:{};
